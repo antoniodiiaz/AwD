@@ -1,0 +1,4 @@
+kafka-python==2.0.2
+flask==2.0.1
+cryptography==3.4.8
+pymongo==3.12.0

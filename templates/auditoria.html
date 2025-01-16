@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría</title>
+    <style>
+        /* Estilos para el body, header, y nav */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        /* Estilos para los botones */
+        .btn-mapa {
+            background-color: #52a5ff;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn-home {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .btn-mapa:hover,
+        .btn-home:hover {
+            background-color: #0056b3;
+        }
+        /* Estilos para la tabla y otros elementos específicos del primer HTML */
+        .content {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007BFF;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Registro de auditoría</h1>
+    </header>
+<nav>
+    <ul>
+        <!-- Botones de navegación -->
+        <li><a class="btn-mapa" href="{{ url_for('mapa') }}">Mostrar mapa</a></li>
+        <li><a class="btn-mapa" href="/">Inicio</a></li>
+        <li><a class="btn-mapa" href="{{ url_for('auditoria') }}">Auditoría</a></li>
+    </ul>
+</nav>
+    <table>
+        <thead>
+            <tr>
+                <th>Acción</th>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody id="auditoria-data">
+            {% if auditoria %}
+                {% for entry in auditoria['data'] %}
+                    <tr>
+                        <td>{{ entry['Accion'] }}</td>
+                        <td>{{ entry['Descripcion'] }}</td>
+                        <td>{{ entry['Fecha'] }}</td>
+                        <td>{{ entry['Hora'] }}</td>
+                        <td>{{ entry['IP'] }}</td>
+                    </tr>
+                {% endfor %}
+            
+            {% endif %}
+        </tbody>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            console.log("Conectado al servidor de sockets.");
+        });
+
+        socket.on('update_auditoria', function(data) {
+            var auditoriaTable = document.getElementById('auditoria-data');
+            auditoriaTable.innerHTML = ""; // Limpiar la tabla existente
+
+            if (data.auditoria_data) {
+                data.auditoria_data.data.forEach(function(entry) {
+                    var row = auditoriaTable.insertRow();
+                    var accionCell = row.insertCell(0);
+                    var descripcionCell = row.insertCell(1);
+                    var fechaCell = row.insertCell(2);
+                    var horaCell = row.insertCell(3);
+                    var ipCell = row.insertCell(4);
+
+                    accionCell.innerHTML = entry.Accion;
+                    descripcionCell.innerHTML = entry.Descripcion;
+                    fechaCell.innerHTML = entry.Fecha;
+                    horaCell.innerHTML = entry.Hora;
+                    ipCell.innerHTML = entry.IP;
+                });
+            } else {
+                var row = auditoriaTable.insertRow();
+                var noDataCell = row.insertCell(0);
+                noDataCell.colSpan = 5;
+                noDataCell.innerHTML = "No hay datos de auditoría disponibles.";
+            }
+        });
+    </script>
+</body>
+</html>

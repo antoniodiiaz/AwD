@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Página de Inicio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        .content {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007BFF;
+        }
+        /* Estilo para el botón "Mostrar mapa" */
+        .btn-mapa {
+            background-color: #52a5ff;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn-home {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .btn-mapa:hover,
+        .btn-home:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Art With Drones</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a class="btn-mapa" href="{{ url_for('mapa') }}">Mostrar mapa</a></li>
+            <li><a class="btn-mapa" href="/">Inicio</a></li>
+            <li><a class="btn-mapa" href="{{ url_for('auditoria') }}">Auditoría</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        <h2>Tiempo</h2>
+        <p>Temperatura en {{ ciudad }}: {{ temperatura }}°C</p>
+    </div>
+</body>
+</html>

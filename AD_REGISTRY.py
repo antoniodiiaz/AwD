@@ -1,11 +1,15 @@
-import socket
 import pymongo
 import threading
+import sys
 import random
+import time
+from flask import Flask, request, jsonify
+from AD_MAP import *
 
 MAX_CONEXIONES = 50
 HEADER = 128
 FORMAT = "utf-8"
+
 
 ENQ = "<ENQ>"
 ACK = "1"
@@ -14,6 +18,7 @@ STX = "<STX>"
 ETX = "<ETX>"
 EOT = "<EOT>"
 
+DATOS_DATABASE = "mongodb://localhost:27017"
 def calculaLrc(cadena):
     suma = 0
     for caracter in cadena:
@@ -60,109 +65,137 @@ def obtenerDatosDrone(lista):
             newPalabra += str(palabra)
     return newLista
 
-class AD_REGISTRY:
-    def __init__(self,puerto,datos_db):
-        self.puerto = puerto
-        self.datos_db = datos_db
-    
-    def generaToken(self):
-        cadena = ""
-        for i in range(9):
-            num = random.randint(97,122)
-            cadena += str(chr(num))
-        return cadena
+def generaToken():
+    cadena = ""
+    for i in range(9):
+        num = random.randint(97,122)
+        cadena += str(chr(num))
+    return cadena
 
-    def handle_drone(self,conn,addr):
-        print(f"Nueva conexión: {addr} conectado.")
-        connected = True
-        try:
-            while connected:
-                drone_length = conn.recv(128).decode(FORMAT)
-                if compruebaMensaje(drone_length):
-                    conn.send(ACK.encode(FORMAT))
-                    if drone_length:
-                        datos = drone_length[drone_length.find(STX)+len(STX):drone_length.find(ETX)]
-                        datos = datos[2:len(datos)-1]
-                        drone_length = int(datos)
-                        drone = conn.recv(drone_length).decode(FORMAT)
-                        if compruebaMensaje(drone):
-                            conn.send(ACK.encode(FORMAT))
-                            indSTX = drone.find(STX)
-                            indETX = drone.find(ETX)
-                            drone = drone[indSTX+len(STX):indETX]
-                            print(drone)
-                            token = self.generaToken()
-                            drone += "_" + token
-                            idDrone = self.connection_database(drone)
-                            datosDrone = str(idDrone) + "_" + token 
-                            # ID_COORDENADAX_COORDENADAY_TOKEN
-                            mensaje = STX + datosDrone + ETX + str(calculaLrc(datosDrone))
-                            conn.send(mensaje.encode(FORMAT))
-                            mensaje = conn.recv(2).decode(FORMAT)
-                            if mensaje == ACK:
-                                mensaje = conn.recv(len(EOT)).decode(FORMAT)
-                                conn.send(EOT.encode(FORMAT))
-                                if mensaje == EOT:
-                                    connected = False
-                                    print("Se va a cerrar la conexión")
-                        else:
-                            conn.send(NACK.encode(FORMAT))
-                else:
-                    conn.send(NACK.encode(FORMAT))
-            
-        except Exception as e:
-            print("Se ha perdido la conexión con el Dron y no se ha podido registrar correctamente.")
-            connected = False
-        finally:
-            conn.close()
 
-    def start(self):
-        print("Servidor inicializándose:")
-        registry = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        ADDR = ((socket.gethostbyname(socket.gethostname())),self.puerto)
-        registry.bind(ADDR)
-        print(f"Servidor a la escucha en {registry}")
-        registry.listen()
-        CONEX_ACTIVAS = threading.active_count() - 1
-        print(f"Hay {CONEX_ACTIVAS} conexiones activas")
-        while True:
-            conn, addr = registry.accept()
-            mensaje = conn.recv(len(ENQ)).decode(FORMAT)
-            if mensaje == ENQ:
-                conn.send(ACK.encode(FORMAT))
-                CONEX_ACTIVAS = threading.active_count()
-                if CONEX_ACTIVAS <= MAX_CONEXIONES:
-                    thread = threading.Thread(target=self.handle_drone,args=(conn,addr))         
-                    thread.start()
-            else:
-                conn.send(NACK.encode(FORMAT))
+def obtenerBaseDatos():
+    cliente = pymongo.MongoClient(DATOS_DATABASE)
+    database = cliente["dbREGISTRY"]
+    collection = database["REGISTRY"]
+    return collection
 
-    def databaseVacia(self,collection):
-        return collection.count_documents({}) == 0
-    
-    def connection_database(self,drone):
-        MONGO_URI = self.datos_db
-        cliente = pymongo.MongoClient(MONGO_URI)
-        database = cliente["dbREGISTRY"]
-        collection = database['REGISTRY']
-        newDrone = obtenerDatosDrone(list(drone))
-        if self.databaseVacia(collection):
-            newDrone[0] = 1
-        else:
-            newDrone[0] = collection.find().sort("ID",-1)[0]["ID"] + 1
-        alias = "Drone_" + str(newDrone[0])
-        pos = newDrone[1] + "," + newDrone[2]
-        insertar = {
-            "ID" : newDrone[0],
-            "Alias" : alias,
-            "POS": pos,
-            "Token" : newDrone[3]
+def limpiaToken(id):
+    time.sleep(20)
+    collection = obtenerBaseDatos()
+    filtro = {'ID' : id}
+    actualizacion = {'$set' : {'Token' : ""}}
+    collection.update_one(filtro,actualizacion)
+    print("Se ha limpiado el token de la base de datos")
+
+
+# API_REST
+app = Flask(__name__)
+
+@app.route('/generarToken/<int:id>',methods=['PUT'])
+def actualizarToken(id):
+    try:
+        datas = request.get_json()
+
+        id = datas['ID']
+
+        collection = obtenerBaseDatos()
+        token = generaToken()
+        filtro = {'ID' : id}
+        actualizacion = {'$set' : {'Token' : token}}
+        collection.update_one(filtro,actualizacion)
+        response = {
+            'error' : False,
+            'message' : 'Se ha generado el token (válido solo 20 segundos)',
+            'data' : {'Token' : token}
         }
-        collection.insert_one(insertar)
-        print(f"Dron con ID: {newDrone[0]} y token = {newDrone[3]} registrado correctamente en la Base de Datos")
-        return newDrone[0]
+        limpiarToken = threading.Thread(target=limpiaToken,args=(id,))
+        limpiarToken.start()
+        return jsonify(response),201
+
+    except Exception as e:
+        response = {
+            'error' : True,
+            'message' : f'Error: {e}',
+            'data' : None
+        }
+        print(f"Fallo {e}")
+        return jsonify(response), 500
+
+
+@app.route('/obtenerdatos',methods=['GET'])
+def obtenerDrones():
+    try:
+        if request.method == "GET":
+            #obtener todos los drones de la base de datos
+           
+            collection = obtenerBaseDatos()
+            registros = list(collection.find({}, {'_id': False}))
+           
+            response = {
+                'data' : registros,
+                'error' : False,
+                'message' : 'Objetos cogidos satisfactoriamente'
+            }
+            return jsonify(response), 200
+        
+    except Exception as e:
+        response = {
+            'error' : False,
+            'message' : f'Ha ocurrido el error: {e}',
+            'data' : None
+        }
+        return jsonify(response),500
+    
+
+@app.route('/registrardron',methods=['POST'])
+def anyadirDrones():
+    try:
+        datas = request.get_json()
+        
+        for data in datas:
+
+            # Insertar dron en la base de datos
+            alias = data['Alias']
+            id = data['ID']
+            pos = data['POS']
+            token = data['Token']
+            insertar = {
+                "ID" : id,
+                "Alias" : alias,
+                "POS": pos,
+                "Token" : token,
+		"Mapa" : AD_MAP().mapToString(),
+		"Estado" : "N"
+            }
+            collection = obtenerBaseDatos()
+            collection.insert_one(insertar)
+            print(f"<API_REST> Dron con ID: {id} registrado correctamente en la Base de Datos")
+
+            response = {
+                'error' : False,
+                'message' : 'Item Added Successfully',
+                'data' : data
+            }
+
+        return jsonify(response), 201
+    
+    except Exception as e:
+        response = {
+            'error': True,
+            'message': f'Ha ocurrido el siguiente error {e}',
+            'data' : None
+        }
+        return jsonify(response), 500
+    
+@app.route('/')
+def index():
+    return "API_REST REGISTRY-DRONES"
 
 
 if __name__ == "__main__":
-    registro = AD_REGISTRY(8000,"mongodb://localhost:27017")
-    registro.start()
+    if len(sys.argv) != 2:
+        print("Introduce la siguiente línea de argumentos: python AD_REGISTRY.py puertoEscuchaAPI")
+    else:
+        puertoEscuchaAPI = int(sys.argv[1])        
+        app.run(host="registry",debug = False,port=puertoEscuchaAPI,ssl_context=('certificados\certificado_registry.crt','certificados\clave_privada_registry.pem'))
+        

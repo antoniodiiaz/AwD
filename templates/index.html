@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat en tiempo real</title>
+</head>
+<body>
+    <h1>Chat en tiempo real</h1>
+    <input type="text" id="mensaje" placeholder="Escribe un mensaje">
+    <button id="enviar">Enviar</button>
+    <ul id="chat"></ul>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('mensaje-recibido', function(message) {
+            var chat = document.getElementById('chat');
+            var listItem = document.createElement('li');
+            listItem.appendChild(document.createTextNode(message));
+            chat.appendChild(listItem);
+        });
+
+        document.getElementById('enviar').addEventListener('click', function() {
+            var mensaje = document.getElementById('mensaje').value;
+            socket.emit('nuevo-mensaje', mensaje);
+            document.getElementById('mensaje').value = '';
+        });
+    </script>
+</body>
+</html>
+
+
+<script>
+    setInterval(function() {
+        location.reload();
+    }, 1000);
+</script>

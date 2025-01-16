@@ -1,0 +1,22 @@
+
+Fecha	Hora	Ip del evento	Accion	Descripcion
+2023-12-18	10:29:26	engine:8090	Autenticacion	Autenticacion correcta del Dron 2
+2023-12-18	10:29:27	engine:8090	Autenticacion	Autenticacion correcta del Dron 1
+2023-12-18	10:29:28	engine:8090	Autenticacion	Autenticacion correcta del Dron 3
+2023-12-18	10:29:29	engine:8090	Autenticacion	Autenticacion correcta del Dron 4
+2023-12-18	10:29:30	engine:8090	Autenticacion	Autenticacion correcta del Dron 5
+2023-12-18	10:29:30	engine:8090	Autenticacion	Autenticacion correcta del Dron 6
+2023-12-18	10:29:31	engine:8090	Autenticacion	Autenticacion correcta del Dron 7
+2023-12-18	10:29:32	engine:8090	Autenticacion	Autenticacion correcta del Dron 8
+2023-12-18	10:29:34	engine:8090	Autenticacion	Autenticacion correcta del Dron 9
+2023-12-18	10:29:35	engine:8090	Autenticacion	Autenticacion correcta del Dron 10
+2023-12-18	10:29:37	engine:8090	Autenticacion	Autenticacion correcta del Dron 11
+2023-12-18	10:29:39	engine:8090	Autenticacion	Autenticacion correcta del Dron 12
+2023-12-18	10:29:41	engine:8090	Autenticacion	Autenticacion correcta del Dron 13
+2023-12-18	10:29:42	engine:8090	Autenticacion	Autenticacion correcta del Dron 14
+2023-12-18	10:29:46	engine:8090	Autenticacion	Autenticacion correcta del Dron 15
+2023-12-18	10:29:51	172.21.242.86	Inicio	Comienza el espectaculo
+2023-12-18	10:29:58	172.21.242.86	Lectura JSON	Fichero figuras\figuras2.json JSON leido
+2023-12-18	10:30:06	172.21.242.86	Figura terminada	Se ha terminado la figura 1
+2023-12-18	10:30:14	172.21.242.86	CONDICIONES CLIMÁTICAS ADVERSAS	Se ha finalizado el espectáculo por temperatura en Alaska = -9.729999999999961
+2023-12-18	10:30:15	172.21.242.86	Figura terminada	Se ha terminado la figura 2
